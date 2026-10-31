@@ -1984,6 +1984,20 @@ extension Driver {
   public mutating func run(
     jobs: [Job]
   ) throws {
+    try run(jobs: jobs, writeIncrementalBuildInformation: true)
+  }
+
+  /// Run the driver.
+  ///
+  /// - Parameter shouldWriteIncrementalBuildInformation: Whether to write the
+  ///   build record and the module dependency graph after the executor returns.
+  ///   Pass `false` when the executor only records the jobs for the client to
+  ///   run later; the client must then call `writeIncrementalBuildInformation(_:)`
+  ///   once the jobs have finished.
+  public mutating func run(
+    jobs: [Job],
+    writeIncrementalBuildInformation shouldWriteIncrementalBuildInformation: Bool
+  ) throws {
     if parsedOptions.hasArgument(.v) {
       try printVersion(outputStream: stderrStream)
     }
@@ -2065,7 +2079,9 @@ extension Driver {
     if !childJobs.isEmpty {
       do {
         defer {
-          writeIncrementalBuildInformation(jobs)
+          if shouldWriteIncrementalBuildInformation {
+            writeIncrementalBuildInformation(jobs)
+          }
         }
         try performTheBuild(allJobs: childJobs,
                             jobExecutionDelegate: toolExecutionDelegate,

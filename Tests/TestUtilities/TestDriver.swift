@@ -244,7 +244,7 @@ package struct TestDriver {
   /// Execute the given jobs.
   ///
   /// Runs on a detached thread to avoid blocking `engine.build()` call.
-  package mutating func run(jobs: [Job]) async throws {
+  package mutating func run(jobs: [Job], writeIncrementalBuildInformation: Bool = true) async throws {
     // Move driver out of self so we can pass it into the closure without
     // capturing self (a mutable struct can't be captured).
     nonisolated(unsafe) var localDriver = driver
@@ -252,7 +252,7 @@ package struct TestDriver {
     try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, any Error>) in
       let thread = Thread {
         do {
-          try localDriver.run(jobs: localJobs)
+          try localDriver.run(jobs: localJobs, writeIncrementalBuildInformation: writeIncrementalBuildInformation)
           continuation.resume()
         } catch {
           continuation.resume(throwing: error)

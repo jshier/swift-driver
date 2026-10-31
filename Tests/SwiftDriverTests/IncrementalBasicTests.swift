@@ -140,6 +140,23 @@ struct IncrementalBasicTests: DiagVerifiable {
     }
   }
 
+  /// A client that only plans with the driver, and runs the jobs itself, writes the incremental build information
+  /// after the jobs have finished, so `run(jobs:)` mustn't write it.
+  @Test(arguments: [true, false])
+  func runWritesIncrementalBuildInformationOnlyWhenAsked(write: Bool) async throws {
+    let h = try IncrementalTestHarness()
+    try await h.buildInitialState()
+    let priorsModTime = try localFileSystem.getFileInfo(h.priorsPath).modTime
+    try h.touch("main")
+
+    var driver = try TestDriver(args: h.commonArgs + h.sdkArgumentsForTesting)
+    let jobs = try await driver.planBuild()
+    try await driver.run(jobs: jobs, writeIncrementalBuildInformation: write)
+
+    let modTimeAfter = try localFileSystem.getFileInfo(h.priorsPath).modTime
+    #expect((modTimeAfter != priorsModTime) == write)
+  }
+
   @Test func nullBuildNoEmitModule() async throws {
     let h = try IncrementalTestHarness()
     let extraArguments = ["-experimental-emit-module-separately", "-emit-module"]
