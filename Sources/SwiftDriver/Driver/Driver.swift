@@ -1163,6 +1163,7 @@ public struct Driver {
     Self.validateEmitDependencyGraphArgs(&parsedOptions, diagnosticEngine: diagnosticEngine)
     Self.validateValidateClangModulesOnceOptions(&parsedOptions, diagnosticEngine: diagnosticEngine)
     Self.validateParseableOutputArgs(&parsedOptions, diagnosticEngine: diagnosticEngine)
+    Self.validateEmitModuleSeparatelyArgs(&parsedOptions, diagnosticEngine: diagnosticEngine)
     Self.validateCompilationConditionArgs(&parsedOptions, diagnosticEngine: diagnosticEngine)
     Self.validateFrameworkSearchPathArgs(&parsedOptions, diagnosticEngine: diagnosticEngine)
     Self.validateCoverageArgs(&parsedOptions, diagnosticsEngine: diagnosticEngine)
@@ -3590,6 +3591,13 @@ extension Driver {
                                           diagnosticEngine: DiagnosticsEngine) {
     if parsedOptions.contains(.useFrontendParseableOutput) {
       diagnosticEngine.emit(.warning_flag_deprecated(.useFrontendParseableOutput))
+    }
+  }
+
+  static func validateEmitModuleSeparatelyArgs(_ parsedOptions: inout ParsedOptions,
+                                               diagnosticEngine: DiagnosticsEngine) {
+    if parsedOptions.contains(.noEmitModuleSeparately) {
+      diagnosticEngine.emit(.warning_no_emit_module_separately_ignored)
     }
   }
 

@@ -150,9 +150,10 @@ extension Driver {
 
     switch (compilerMode) {
     case .standardCompile, .batchCompile(_):
-      return parsedOptions.hasFlag(positive: .emitModuleSeparately,
-                                   negative: .noEmitModuleSeparately,
-                                   default: true)
+      // Without the merge-modules job, which was removed, only a separate emit-module job can emit the module, so
+      // `-no-emit-module-separately` is ignored (and diagnosed when the options are validated).
+      _ = parsedOptions.hasFlag(positive: .emitModuleSeparately, negative: .noEmitModuleSeparately)
+      return true
 
     case .singleCompile:
       // If cross-module-optimization is done, the module must be emitted in the same

@@ -758,7 +758,7 @@ extension Option {
   public static let noColorDiagnostics: Option = Option("-no-color-diagnostics", .flag, attributes: [.frontend, .doesNotAffectIncrementalBuild], helpText: "Do not print diagnostics in color")
   public static let noDowngradeTypecheckInterfaceError: Option = Option("-no-downgrade-typecheck-interface-error", .flag, attributes: [.helpHidden, .frontend, .noDriver], helpText: "Report errors when typechecking emitted module interfaces, even for a module blocklisted as having a broken interface")
   public static let noEmitModuleSeparatelyWMO: Option = Option("-no-emit-module-separately-wmo", .flag, attributes: [.helpHidden], helpText: "Force emitting the swiftmodule in the same job in wmo builds")
-  public static let noEmitModuleSeparately: Option = Option("-no-emit-module-separately", .flag, attributes: [.helpHidden], helpText: "Force using merge-module as the incremental build mode")
+  public static let noEmitModuleSeparately: Option = Option("-no-emit-module-separately", .flag, attributes: [.helpHidden], helpText: "Obsolete and ignored: the merge-modules build mode was removed, so the module is always emitted by a separate job")
   public static let driverNoExplicitModuleBuild: Option = Option("-no-explicit-module-build", .flag, attributes: [], helpText: "Opt out of the default explicit-module-build behavior for swiftc")
   public static let noLinkObjcRuntime: Option = Option("-no-link-objc-runtime", .flag, attributes: [.helpHidden, .doesNotAffectIncrementalBuild], helpText: "Deprecated")
   public static let noParallelScan: Option = Option("-no-parallel-scan", .flag, attributes: [.frontend, .noDriver], helpText: "Perform dependency scanning in a single-threaded fashion.")

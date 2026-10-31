@@ -615,6 +615,81 @@ import Testing
     }
   }
 
+  @Test func noEmitModuleSeparatelyIsIgnored() async throws {
+    let warning = Diagnostic.Message.warning(
+      "ignoring '-no-emit-module-separately'; the merge-modules build mode is no longer supported, so the module is always emitted by a separate job"
+    )
+    let moduleFileTypes: Set<FileType> = [.swiftModule, .swiftDocumentation, .swiftSourceInfoFile]
+
+    // Without the merge-modules job, only a separate emit-module job can emit the module, in standard and batch mode.
+    for extraArgs in [[], ["-enable-batch-mode", "-j2"]] {
+      try await assertDriverDiagnostics(
+        args: ["swiftc", "-no-color-diagnostics", "foo.swift", "bar.swift", "-module-name", "Test", "-emit-module",
+               "-emit-module-path", "Test.swiftmodule", "-c", "-no-emit-module-separately"] + extraArgs
+      ) { driver, diagnostics in
+        diagnostics.expect(warning)
+        let plannedJobs = try await driver.planBuild().removingAutolinkExtractJobs()
+        let emitModuleJobs = plannedJobs.filter { $0.kind == .emitModule }
+        #expect(emitModuleJobs.count == 1)
+        #expect(emitModuleJobs.first?.outputs.contains { $0.file.basename == "Test.swiftmodule" } == true)
+        let compileJobs = plannedJobs.filter { $0.kind == .compile }
+        #expect(!compileJobs.isEmpty)
+        #expect(compileJobs.allSatisfy { job in !job.outputs.contains { moduleFileTypes.contains($0.type) } })
+      }
+    }
+
+    // A module-only build plans just the emit-module job.
+    try await assertDriverDiagnostics(
+      args: "swiftc", "foo.swift", "bar.swift", "-module-name", "Test", "-emit-module-path", "Test.swiftmodule",
+      "-no-emit-module-separately"
+    ) { driver, diagnostics in
+      diagnostics.expect(warning)
+      let plannedJobs = try await driver.planBuild().removingAutolinkExtractJobs()
+      #expect(plannedJobs.map(\.kind) == [.emitModule])
+    }
+
+    // Whichever of the pair comes last, as when a build system appends `-experimental-emit-module-separately`.
+    for flags in [["-no-emit-module-separately", "-experimental-emit-module-separately"],
+                  ["-experimental-emit-module-separately", "-no-emit-module-separately"]] {
+      try await assertDriverDiagnostics(
+        args: ["swiftc", "-no-color-diagnostics", "foo.swift", "bar.swift", "-module-name", "Test",
+               "-emit-module-path", "Test.swiftmodule", "-c"] + flags
+      ) { driver, diagnostics in
+        diagnostics.expect(warning)
+        let plannedJobs = try await driver.planBuild().removingAutolinkExtractJobs()
+        #expect(plannedJobs.filter { $0.kind == .emitModule }.count == 1)
+      }
+    }
+
+    // The module interface and Objective-C header, which compile jobs don't emit, are emitted too.
+    try await assertDriverDiagnostics(
+      args: "swiftc", "foo.swift", "bar.swift", "-module-name", "Test", "-emit-module-path", "Test.swiftmodule", "-c",
+      "-enable-library-evolution", "-emit-module-interface-path", "Test.swiftinterface",
+      "-emit-objc-header-path", "Test-Swift.h", "-no-emit-module-separately"
+    ) { driver, diagnostics in
+      diagnostics.expect(warning)
+      let plannedJobs = try await driver.planBuild().removingAutolinkExtractJobs()
+      let emitModuleJob = try #require(plannedJobs.first { $0.kind == .emitModule })
+      #expect(emitModuleJob.outputs.contains { $0.type == .swiftInterface })
+      #expect(emitModuleJob.outputs.contains { $0.type == .objcHeader })
+    }
+
+    // In whole-module mode the flag never had an effect; it's still diagnosed.
+    try await assertDriverDiagnostics(
+      args: "swiftc", "foo.swift", "bar.swift", "-module-name", "Test", "-emit-module-path", "Test.swiftmodule",
+      "-wmo", "-c", "-no-emit-module-separately"
+    ) { driver, diagnostics in
+      diagnostics.expect(warning)
+      let plannedJobs = try await driver.planBuild().removingAutolinkExtractJobs()
+      #expect(plannedJobs.filter { $0.kind == .emitModule }.count == 1)
+    }
+
+    try await assertNoDriverDiagnostics(
+      args: "swiftc", "foo.swift", "bar.swift", "-module-name", "Test", "-emit-module-path", "Test.swiftmodule",
+      "-wmo", "-no-emit-module-separately-wmo"
+    )
+  }
+
   @Test func emitModuleSeparatelyWMO() async throws {
     var envVars = ProcessEnv.block
     envVars["SWIFT_DRIVER_LD_EXEC"] = try ld.nativePathString(escaped: false)

@@ -165,6 +165,10 @@ extension Diagnostic.Message {
     .error("unknown target '\(target)'")
   }
 
+  static var warning_no_emit_module_separately_ignored: Diagnostic.Message {
+    .warning("ignoring '\(Option.noEmitModuleSeparately.spelling)'; the merge-modules build mode is no longer supported, so the module is always emitted by a separate job")
+  }
+
   static func warning_option_overrides_another(overridingOption: Option, overridenOption: Option) -> Diagnostic.Message {
     .warning("ignoring '\(overridenOption.spelling)' because '\(overridingOption.spelling)' was also specified")
   }

@@ -1032,8 +1032,8 @@ import Testing
     do {
       var driver = try TestDriver(
         args: [
-          "swiftc", "-emit-module", "./a.swift", "./b.swift", "./c.swift", "-module-name", "main", "-target",
-          "x86_64-apple-macosx10.9", "-driver-filelist-threshold=0", "-no-emit-module-separately",
+          "swiftc", "-c", "-emit-dependencies", "./a.swift", "./b.swift", "./c.swift", "-module-name", "main", "-target",
+          "x86_64-apple-macosx10.9", "-driver-filelist-threshold=0",
         ],
         env: envVars
       )
@@ -1042,23 +1042,17 @@ import Testing
       let jobA = plannedJobs[0]
       let mapA = try jobA.commandLine.supplementaryOutputFilemap
       let filesA = try #require(mapA.entries[try toPath("./a.swift").intern()])
-      #expect(filesA.keys.contains(.swiftModule))
-      #expect(filesA.keys.contains(.swiftDocumentation))
-      #expect(filesA.keys.contains(.swiftSourceInfoFile))
+      #expect(filesA.keys.contains(.dependencies))
 
       let jobB = plannedJobs[1]
       let mapB = try jobB.commandLine.supplementaryOutputFilemap
       let filesB = try #require(mapB.entries[try toPath("./b.swift").intern()])
-      #expect(filesB.keys.contains(.swiftModule))
-      #expect(filesB.keys.contains(.swiftDocumentation))
-      #expect(filesB.keys.contains(.swiftSourceInfoFile))
+      #expect(filesB.keys.contains(.dependencies))
 
       let jobC = plannedJobs[2]
       let mapC = try jobC.commandLine.supplementaryOutputFilemap
       let filesC = try #require(mapC.entries[try toPath("./c.swift").intern()])
-      #expect(filesC.keys.contains(.swiftModule))
-      #expect(filesC.keys.contains(.swiftDocumentation))
-      #expect(filesC.keys.contains(.swiftSourceInfoFile))
+      #expect(filesC.keys.contains(.dependencies))
     }
 
     do {
